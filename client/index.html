@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src http://localhost:* https://* ws://localhost:* wss://*; font-src 'self' data:">
+    <title>BIZNEX BOS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginModal" style="display: flex;">
+        <div class="login-card">
+            <div class="login-brand">
+                <img src="logo.png" class="login-logo-img" alt="Biznex Logo">
+                <h1>BIZNEX BOS</h1>
+                <p>Business Operating System</p>
+            </div>
+            <form id="loginForm">
+                <div class="login-field">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your username" required autocomplete="username">
+                </div>
+                <div class="login-field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="login-btn">Sign In</button>
+            </form>
+            <div id="loginError" class="error-message" style="display: none;"></div>
+            <p class="login-footer-hint">Use the credentials you set during setup</p>
+        </div>
+    </div>
+
+    <div id="app"></div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Status Indicator -->
+    <div id="status-indicator" class="status-indicator">
+        <div class="status-dot" id="status-dot"></div>
+        <div class="status-text" id="status-text">Online</div>
+    </div>
+
+    <div id="orderModal" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="orderTitle"></h3>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody id="orderItems"></tbody>
+        </table>
+
+        <h4 id="orderTotal"></h4>
+
+        <button onclick="closeOrderModal()" class="btn secondary">Close</button>
+      </div>
+    </div>
+
+    <!-- Generic Form Prompt Modal (used instead of window.prompt in Electron) -->
+    <div id="promptModal" class="modal hidden">
+      <div class="modal-content" id="promptModalContent">
+        <!-- Content generated dynamically -->
+      </div>
+    </div>
+
+    <script src="socket.io.min.js"></script>
+    <script src="chart.min.js"></script>
+    <script src="cart.js"></script>
+    <script src="prompt-modal.js"></script>
+    <script src="update-banner.js"></script>
+    <script src="sync-indicator.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Biznex BOS — Setup</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0;
+    height: 100vh; display: flex; align-items: center; justify-content: center;
+    -webkit-app-region: drag;
+  }
+
+  .container { width: 560px; -webkit-app-region: no-drag; }
+
+  /* Progress steps */
+  .steps { display: flex; justify-content: center; gap: 0; margin-bottom: 32px; position: relative; }
+  .steps::before {
+    content: ''; position: absolute; top: 20px; left: 10%; right: 10%;
+    height: 2px; background: #334155; z-index: 0;
+  }
+  .step {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    flex: 1; position: relative; z-index: 1;
+  }
+  .step-dot {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #1e293b; border: 2px solid #334155;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: #64748b;
+    transition: all 0.3s;
+  }
+  .step.active   .step-dot { background: #0284c7; border-color: #0284c7; color: #fff; }
+  .step.complete .step-dot { background: #065f46; border-color: #10b981; color: #10b981; }
+  .step-label { font-size: 11px; color: #64748b; text-align: center; white-space: nowrap; }
+  .step.active .step-label { color: #38bdf8; }
+
+  /* Card */
+  .card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+    padding: 36px 44px; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  }
+  .card h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .card p.subtitle  { font-size: 13px; color: #94a3b8; margin-bottom: 28px; }
+
+  .form-group { margin-bottom: 18px; }
+  label { display: block; font-size: 13px; font-weight: 500; color: #94a3b8; margin-bottom: 6px; }
+  input, select {
+    width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #334155;
+    border-radius: 8px; color: #e2e8f0; font-size: 14px; outline: none; transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: #38bdf8; }
+  select option { background: #1e293b; }
+  .hint { font-size: 11px; color: #475569; margin-top: 5px; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .btn-row { display: flex; gap: 12px; margin-top: 24px; }
+  button {
+    padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; border: none;
+  }
+  .btn-primary { background: #0284c7; color: #fff; flex: 1; }
+  .btn-primary:hover:not(:disabled) { background: #0369a1; }
+  .btn-secondary { background: #1e3a5f; color: #93c5fd; border: 1px solid #1e40af; }
+  .btn-secondary:hover { background: #1e40af; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status {
+    margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none;
+  }
+  .status.error   { background: #450a0a; border: 1px solid #7f1d1d; color: #fca5a5; display: block; }
+  .status.success { background: #052e16; border: 1px solid #14532d; color: #86efac; display: block; }
+
+  .strength-bar { height: 4px; border-radius: 2px; margin-top: 6px; background: #334155; overflow: hidden; }
+  .strength-fill { height: 100%; width: 0; transition: width 0.3s, background 0.3s; border-radius: 2px; }
+
+  .welcome-icon { font-size: 48px; text-align: center; margin-bottom: 16px; }
+  .check-list { list-style: none; margin: 16px 0; }
+  .check-list li { padding: 6px 0; font-size: 13px; color: #94a3b8; }
+  .check-list li::before { content: '✅ '; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Steps indicator -->
+  <div class="steps">
+    <div class="step active" id="step-dot-1">
+      <div class="step-dot">1</div>
+      <div class="step-label">Business</div>
+    </div>
+    <div class="step" id="step-dot-2">
+      <div class="step-dot">2</div>
+      <div class="step-label">Currency</div>
+    </div>
+    <div class="step" id="step-dot-3">
+      <div class="step-dot">3</div>
+      <div class="step-label">Security</div>
+    </div>
+    <div class="step" id="step-dot-4">
+      <div class="step-dot">4</div>
+      <div class="step-label">Done</div>
+    </div>
+  </div>
+
+  <div class="card" id="card"><!-- filled by JS --></div>
+</div>
+
+<script>
+const api = window.setupAPI;
+
+let formData = {
+  business_name: '', receipt_footer: 'Thank you for your purchase!',
+  currency_symbol: '$', currency_code: 'USD', tax_rate: '0', tax_label: 'Tax',
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  new_username: 'admin', new_password: '', confirm_password: '',
+};
+
+const steps = [renderStep1, renderStep2, renderStep3, renderStep4];
+let currentStep = 0;
+
+function setStepDotState(n, state) {
+  const el = document.getElementById(`step-dot-${n}`);
+  if (!el) return;
+  el.className = `step ${state}`;
+  if (state === 'complete') el.querySelector('.step-dot').textContent = '✓';
+}
+
+function goTo(n) {
+  // Mark previous steps complete
+  for (let i = 1; i < n; i++) setStepDotState(i, 'complete');
+  setStepDotState(n, 'active');
+  currentStep = n - 1;
+  steps[currentStep]();
+}
+
+// ── Step 1: Business Info ──────────────────────────────────────────────────
+function renderStep1() {
+  document.getElementById('card').innerHTML = `
+    <h2>Welcome to Biznex BOS</h2>
+    <p class="subtitle">Let's set up your business in 3 quick steps.</p>
+    <div class="form-group">
+      <label>Business Name</label>
+      <input type="text" id="business_name" placeholder="e.g. Mama's Canteen" value="${formData.business_name}" maxlength="80" />
+    </div>
+    <div class="form-group">
+      <label>Receipt Footer Message</label>
+      <input type="text" id="receipt_footer" placeholder="Thank you for your purchase!" value="${formData.receipt_footer}" maxlength="120" />
+      <div class="hint">Printed at the bottom of every receipt.</div>
+    </div>
+    <div class="form-group">
+      <label>Timezone</label>
+      <select id="timezone">
+        ${getTimezoneOptions(formData.timezone)}
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="saveStep1()">Next →</button>
+    </div>
+    <div class="status" id="stepStatus"></div>`;
+}
+
+function saveStep1() {
+  const name = document.getElementById('business_name').value.trim();
+  if (!name) return showStepError('Business name is required.');
+  formData.business_name   = name;
+  formData.receipt_footer  = document.getElementById('receipt_footer').value.trim() || 'Thank you for your purchase!';
+  formData.timezone        = document.getElementById('timezone').value;
+  goTo(2);
+}
+
+// ── Step 2: Currency & Tax ─────────────────────────────────────────────────
+function renderStep2() {
+  document.getElementById('card').innerHTML = `
+    <h2>Currency & Tax</h2>
+    <p class="subtitle">Configure how prices and receipts are displayed.</p>
+    <div class="row">
+      <div class="form-group">
+        <label>Currency Symbol</label>
+        <input type="text" id="currency_symbol" maxlength="4" placeholder="$" value="${formData.currency_symbol}" />
+      </div>
+      <div class="form-group">
+        <label>Currency Code</label>
+        <input type="text" id="currency_code" maxlength="6" placeholder="USD" value="${formData.currency_code}" />
+        <div class="hint">ISO code e.g. USD, EUR, KES, INR</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <label>Tax Rate (%)</label>
+        <input type="number" id="tax_rate" min="0" max="100" step="0.01" placeholder="0" value="${formData.tax_rate}" />
+        <div class="hint">Set 0 to disable tax on receipts.</div>
+      </div>
+      <div class="form-group">
+        <label>Tax Label</label>
+        <input type="text" id="tax_label" maxlength="20" placeholder="Tax" value="${formData.tax_label}" />
+        <div class="hint">e.g. VAT, GST, Tax</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goTo(1)">← Back</button>
+      <button class="btn-primary" onclick="saveStep2()">Next →</button>
+    </div>
+    <div class="status" id="stepStatus"></div>`;
+}
+
+function saveStep2() {
+  formData.currency_symbol = document.getElementById('currency_symbol').value.trim() || '$';
+  formData.currency_code   = document.getElementById('currency_code').value.trim().toUpperCase() || 'USD';
+  formData.tax_rate        = document.getElementById('tax_rate').value || '0';
+  formData.tax_label       = document.getElementById('tax_label').value.trim() || 'Tax';
+  goTo(3);
+}
+
+// ── Step 3: Change Admin Password ─────────────────────────────────────────
+function renderStep3() {
+  document.getElementById('card').innerHTML = `
+    <h2>Secure Your Account</h2>
+    <p class="subtitle">Set your admin login credentials.</p>
+    <div class="form-group">
+      <label>Admin Username</label>
+      <input type="text" id="new_username" placeholder="admin" value="${formData.new_username}" maxlength="40" autocomplete="username" />
+      <div class="hint">This is the username you will use to log in.</div>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="new_password" placeholder="At least 8 characters" oninput="checkStrength(this.value)" autocomplete="new-password" />
+      <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+    </div>
+    <div class="form-group">
+      <label>Confirm Password</label>
+      <input type="password" id="confirm_password" placeholder="Repeat password" autocomplete="new-password" />
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goTo(2)">← Back</button>
+      <button class="btn-primary" onclick="saveStep3()">Finish Setup</button>
+    </div>
+    <div class="status" id="stepStatus"></div>`;
+}
+
+function checkStrength(val) {
+  const fill = document.getElementById('strengthFill');
+  if (!fill) return;
+  let score = 0;
+  if (val.length >= 8)           score++;
+  if (/[A-Z]/.test(val))        score++;
+  if (/[0-9]/.test(val))        score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const colors = ['#ef4444','#f97316','#eab308','#22c55e'];
+  fill.style.width     = (score * 25) + '%';
+  fill.style.background = colors[score - 1] || '#334155';
+}
+
+async function saveStep3() {
+  const uname = document.getElementById('new_username').value.trim();
+  const pw  = document.getElementById('new_password').value;
+  const pw2 = document.getElementById('confirm_password').value;
+  if (!uname)                 return showStepError('Username is required.');
+  if (!/^[a-zA-Z0-9_]+$/.test(uname)) return showStepError('Username can only contain letters, numbers, or underscores.');
+  if (!pw || pw.length < 8)   return showStepError('Password must be at least 8 characters.');
+  if (pw !== pw2)             return showStepError('Passwords do not match.');
+  formData.new_username = uname;
+  formData.new_password = pw;
+
+  const btn = document.querySelector('.btn-primary');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  const result = await api.saveSetup(formData);
+  if (result.success) {
+    goTo(4);
+  } else {
+    btn.disabled = false; btn.textContent = 'Finish Setup';
+    showStepError(result.error || 'Setup failed. Please try again.');
+  }
+}
+
+// ── Step 4: Done ──────────────────────────────────────────────────────────
+function renderStep4() {
+  setStepDotState(4, 'active');
+  document.getElementById('card').innerHTML = `
+    <div class="welcome-icon">🎉</div>
+    <h2 style="text-align:center">You're all set!</h2>
+    <p class="subtitle" style="text-align:center">${formData.business_name} is ready to go.</p>
+    <ul class="check-list">
+      <li>Business profile saved</li>
+      <li>Currency set to ${formData.currency_symbol} (${formData.currency_code})</li>
+      <li>Admin credentials saved</li>
+      <li>Default POS screen loaded on launch</li>
+    </ul>
+    <div style="margin:20px 0;padding:16px;background:#0f172a;border:1px solid #38bdf8;border-radius:10px;font-size:14px;">
+      <div style="color:#94a3b8;margin-bottom:8px;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">🔑 Your Login Credentials</div>
+      <div style="margin-bottom:6px">Username: <strong style="color:#38bdf8">${formData.new_username}</strong></div>
+      <div>Password: <strong style="color:#38bdf8">${'*'.repeat(formData.new_password.length)}</strong> <span style="color:#94a3b8;font-size:12px">(the password you just set)</span></div>
+    </div>
+    <div class="btn-row" style="margin-top:20px;">
+      <button class="btn-primary" onclick="api.setupDone()">Launch Biznex BOS →</button>
+    </div>`;
+}
+
+// ── helpers ───────────────────────────────────────────────────────────────
+function showStepError(msg) {
+  const el = document.getElementById('stepStatus');
+  if (el) { el.textContent = msg; el.className = 'status error'; }
+}
+
+function getTimezoneOptions(selected) {
+  const zones = [
+    'UTC','Africa/Nairobi','Africa/Lagos','Africa/Cairo','America/New_York',
+    'America/Chicago','America/Denver','America/Los_Angeles','Asia/Kolkata',
+    'Asia/Dubai','Asia/Singapore','Asia/Tokyo','Australia/Sydney',
+    'Europe/London','Europe/Paris','Europe/Berlin','Pacific/Auckland',
+  ];
+  return zones.map(z => `<option value="${z}" ${z === selected ? 'selected' : ''}>${z}</option>`).join('');
+}
+
+// Start
+goTo(1);
+</script>
+</body>
+</html>

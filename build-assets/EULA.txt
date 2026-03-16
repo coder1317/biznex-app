@@ -1,0 +1,63 @@
+BIZNEX BOS — END USER LICENSE AGREEMENT
+
+IMPORTANT: READ THIS AGREEMENT CAREFULLY BEFORE INSTALLING OR USING THIS SOFTWARE.
+
+By installing, copying, or otherwise using Biznex BOS ("the Software"), you agree
+to be bound by the terms of this End User License Agreement ("EULA"). If you do not
+agree to these terms, do not install or use the Software.
+
+1. GRANT OF LICENSE
+   Subject to the terms of this EULA, Biznex grants you a limited, non-exclusive,
+   non-transferable license to install and use one copy of the Software per activated
+   license seat, solely for your internal business operations.
+
+2. RESTRICTIONS
+   You may not:
+   a) Copy, modify, or distribute the Software without prior written consent from Biznex;
+   b) Reverse engineer, decompile, or disassemble the Software;
+   c) Rent, lease, or lend the Software to third parties;
+   d) Remove any proprietary notices or labels on the Software;
+   e) Use the Software to develop competing products.
+
+3. ACTIVATION & LICENSE KEYS
+   The Software requires a valid license key to operate. Each license key entitles you
+   to the number of concurrent device activations stated at time of purchase. License
+   keys are non-transferable and tied to your account.
+
+4. OWNERSHIP
+   The Software is licensed, not sold. Biznex retains all intellectual property rights
+   in the Software. This EULA does not transfer ownership of the Software to you.
+
+5. DATA & PRIVACY
+   The Software may transmit anonymous usage data, error reports, and encrypted database
+   backups to Biznex servers for the purpose of providing services. No personally
+   identifiable information is transmitted without your consent. You own all business
+   data entered into the Software.
+
+6. UPDATES
+   Biznex may provide updates to the Software. Updates are subject to the terms of this
+   EULA unless a separate license agreement is provided with the update.
+
+7. SUPPORT
+   Support is provided as described in your purchase agreement. Biznex is not obligated
+   to provide support under this EULA alone.
+
+8. DISCLAIMER OF WARRANTIES
+   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+   PURPOSE, AND NONINFRINGEMENT.
+
+9. LIMITATION OF LIABILITY
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, BIZNEX SHALL NOT BE LIABLE FOR ANY INDIRECT,
+   INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM USE OF THE SOFTWARE, EVEN
+   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+10. TERMINATION
+    This EULA is effective until terminated. Your rights under this EULA will terminate
+    automatically without notice if you fail to comply with any terms. Upon termination,
+    you must destroy all copies of the Software.
+
+11. GOVERNING LAW
+    This EULA shall be governed by the laws of your jurisdiction of purchase.
+
+Copyright © 2026 Biznex. All rights reserved.

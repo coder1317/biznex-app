@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Biznex BOS — Activate</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    color: #e2e8f0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-app-region: drag;
+  }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 20px;
+    padding: 32px 38px 28px;
+    width: 490px;
+    -webkit-app-region: no-drag;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+
+  /* Logo */
+  .logo { text-align: center; margin-bottom: 22px; }
+  .logo-mark {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, #4f46e5, #2563eb);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 800; color: #fff;
+    margin: 0 auto 10px;
+    letter-spacing: 1px;
+    box-shadow: 0 8px 24px rgba(79,70,229,0.4);
+  }
+  .logo h1 { font-size: 20px; font-weight: 700; color: #f1f5f9; }
+  .logo p  { font-size: 11px; color: #64748b; margin-top: 3px; }
+
+  /* Plan tier badges */
+  .plans-row { display: flex; gap: 8px; margin-bottom: 18px; }
+  .plan-badge {
+    flex: 1; border: 1px solid #334155; border-radius: 10px;
+    padding: 10px 6px; text-align: center; cursor: default;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .plan-badge .badge-code  { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+  .plan-badge .badge-name  { font-size: 11px; font-weight: 600; color: #e2e8f0; }
+  .plan-badge .badge-type  { font-size: 9px; color: #64748b; margin-top: 1px; }
+  .plan-badge .badge-dev   { font-size: 9px; color: #475569; margin-top: 1px; }
+
+  .plan-badge.str { border-color: rgba(99,102,241,0.25); background: rgba(99,102,241,0.04); }
+  .plan-badge.str .badge-code { color: #818cf8; }
+  .plan-badge.biz { border-color: rgba(14,165,233,0.25); background: rgba(14,165,233,0.04); }
+  .plan-badge.biz .badge-code { color: #38bdf8; }
+  .plan-badge.ent { border-color: rgba(16,185,129,0.25); background: rgba(16,185,129,0.04); }
+  .plan-badge.ent .badge-code { color: #34d399; }
+
+  .plan-badge.str.active { border-color: rgba(99,102,241,0.7); background: rgba(99,102,241,0.12); box-shadow: 0 0 0 1px rgba(99,102,241,0.4); }
+  .plan-badge.biz.active { border-color: rgba(14,165,233,0.7);  background: rgba(14,165,233,0.12);  box-shadow: 0 0 0 1px rgba(14,165,233,0.4); }
+  .plan-badge.ent.active { border-color: rgba(16,185,129,0.7);  background: rgba(16,185,129,0.12);  box-shadow: 0 0 0 1px rgba(16,185,129,0.4); }
+
+  /* Detected plan strip */
+  #planStrip {
+    display: none; border-radius: 8px; padding: 8px 12px;
+    font-size: 12px; font-weight: 600; margin-bottom: 14px;
+    text-align: center; letter-spacing: 0.3px;
+  }
+  #planStrip.str { background: rgba(99,102,241,0.12); color: #818cf8; border: 1px solid rgba(99,102,241,0.35); }
+  #planStrip.biz { background: rgba(14,165,233,0.12); color: #38bdf8;  border: 1px solid rgba(14,165,233,0.35); }
+  #planStrip.ent { background: rgba(16,185,129,0.12); color: #34d399;  border: 1px solid rgba(16,185,129,0.35); }
+
+  /* Trial banner */
+  .trial-banner {
+    background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 8px; padding: 9px 13px; margin-bottom: 16px;
+    display: none; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .trial-banner p { font-size: 12px; color: #fcd34d; line-height: 1.5; }
+  .trial-banner strong { color: #fde68a; }
+  .btn-trial {
+    flex-shrink: 0; padding: 5px 11px;
+    background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.4);
+    border-radius: 6px; color: #fcd34d; font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: background 0.15s;
+  }
+  .btn-trial:hover { background: rgba(245,158,11,0.35); }
+
+  /* Form */
+  .section-label { font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-size: 12px; font-weight: 500; color: #94a3b8; margin-bottom: 5px; }
+  input {
+    width: 100%; padding: 10px 14px;
+    background: #0f172a; border: 1px solid #334155;
+    border-radius: 8px; color: #e2e8f0; font-size: 14px;
+    outline: none; transition: border-color 0.15s;
+  }
+  input:focus { border-color: #4f46e5; }
+  input::placeholder { color: #334155; }
+  .key-input { font-family: 'Courier New', monospace; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; }
+  .key-hint { font-size: 10px; color: #475569; margin-top: 5px; line-height: 1.6; }
+  .key-hint span { color: #6366f1; font-weight: 600; }
+
+  .btn-activate {
+    width: 100%; padding: 12px;
+    background: linear-gradient(135deg, #4f46e5, #2563eb);
+    color: #fff; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px;
+    transition: opacity 0.15s, transform 0.1s;
+    box-shadow: 0 4px 16px rgba(79,70,229,0.35);
+  }
+  .btn-activate:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+  .btn-activate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .status { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; line-height: 1.5; }
+  .status.error   { background: rgba(127,29,29,0.4); border: 1px solid #7f1d1d; color: #fca5a5; display: block; }
+  .status.success { background: rgba(5,46,22,0.5);   border: 1px solid #14532d; color: #86efac; display: block; }
+  .status.info    { background: rgba(12,26,46,0.5);   border: 1px solid #1e3a5f; color: #93c5fd; display: block; }
+
+  /* Activated plan card */
+  .plan-activated {
+    display: none; text-align: center; margin-top: 12px;
+    padding: 14px; border-radius: 10px;
+    border: 1px solid #14532d; background: rgba(5,46,22,0.4);
+  }
+  .plan-activated.visible { display: block; }
+  .plan-activated .plan-icon    { font-size: 26px; margin-bottom: 4px; }
+  .plan-activated .plan-name    { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+  .plan-activated .plan-type    { font-size: 11px; color: #86efac; margin-bottom: 2px; }
+  .plan-activated .plan-devices { font-size: 11px; color: #86efac; }
+
+  /* Features list */
+  #featureList {
+    display: none; margin-top: 10px; margin-bottom: 12px;
+    background: rgba(15,23,42,0.5); border: 1px solid #1e293b;
+    border-radius: 8px; padding: 10px 14px;
+  }
+  #featureList .feat-title { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 7px; }
+  #featureList ul { list-style: none; display: flex; flex-wrap: wrap; gap: 5px; }
+  #featureList ul li { font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+  #featureList ul li.included   { background: rgba(16,185,129,0.1); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+  #featureList ul li.unlocked   { background: rgba(14,165,233,0.1); color: #7dd3fc; border: 1px solid rgba(14,165,233,0.2); }
+  #featureList ul li.enterprise { background: rgba(100,116,139,0.1); color: #64748b; border: 1px solid rgba(100,116,139,0.2); }
+
+  .footer { margin-top: 16px; text-align: center; font-size: 11px; color: #475569; line-height: 1.8; }
+  .footer a { color: #6366f1; text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+  .version { text-align: center; font-size: 10px; color: #1e293b; margin-top: 6px; }
+
+  .spinner {
+    display: inline-block; width: 13px; height: 13px;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div class="logo">
+    <div class="logo-mark">BX</div>
+    <h1>BIZNEX BOS</h1>
+    <p>Business Operating System &mdash; License Activation</p>
+  </div>
+
+  <!-- Plan tier reference row -->
+  <div class="plans-row">
+    <div class="plan-badge str" id="badge-str">
+      <div class="badge-code">BZNX-STR</div>
+      <div class="badge-name">Starter</div>
+      <div class="badge-type">Single Store</div>
+      <div class="badge-dev">1 device</div>
+    </div>
+    <div class="plan-badge biz" id="badge-biz">
+      <div class="badge-code">BZNX-BIZ</div>
+      <div class="badge-name">Business</div>
+      <div class="badge-type">Multi-Store</div>
+      <div class="badge-dev">Up to 10 devices</div>
+    </div>
+    <div class="plan-badge ent" id="badge-ent">
+      <div class="badge-code">BZNX-ENT</div>
+      <div class="badge-name">Enterprise</div>
+      <div class="badge-type">Unlimited Stores</div>
+      <div class="badge-dev">Unlimited devices</div>
+    </div>
+  </div>
+
+  <!-- Plan detection strip (shown when key has valid prefix) -->
+  <div id="planStrip"></div>
+
+  <!-- Dynamic feature list (shown when plan is detected from key) -->
+  <div id="featureList">
+    <div class="feat-title">Included in this plan</div>
+    <ul id="featureItems"></ul>
+  </div>
+
+  <!-- Trial banner -->
+  <div class="trial-banner" id="trialBanner">
+    <p id="trialText">You have a <strong>14-day free trial</strong> available.</p>
+    <button class="btn-trial" id="trialBtn">Start Trial</button>
+  </div>
+
+  <p class="section-label">Enter Your License Key</p>
+
+  <form id="activationForm" autocomplete="off">
+    <div class="form-group">
+      <label for="licenseKey">License Key</label>
+      <input type="text" id="licenseKey" class="key-input"
+             placeholder="BZNX-STR-XXXXXXXX-XXXXXXXX"
+             maxlength="27" spellcheck="false" required />
+      <p class="key-hint">
+        Format: <span>BZNX-STR-…</span> (Single Store) &nbsp;&middot;&nbsp;
+        <span>BZNX-BIZ-…</span> (Multi-Store) &nbsp;&middot;&nbsp;
+        <span>BZNX-ENT-…</span> (Enterprise)
+      </p>
+    </div>
+
+    <button type="submit" class="btn-activate" id="submitBtn">Activate</button>
+    <div class="status" id="statusMsg"></div>
+
+    <div class="plan-activated" id="planActivated">
+      <div class="plan-icon" id="planIcon"></div>
+      <div class="plan-name" id="planName"></div>
+      <div class="plan-type" id="planType"></div>
+      <div class="plan-devices" id="planDevices"></div>
+    </div>
+  </form>
+
+  <div class="footer">
+    Need a key? <a href="#" id="buyLink">Purchase a license →</a><br>
+    Your key was sent to your email after purchase.
+  </div>
+  <div class="version" id="versionLabel"></div>
+</div>
+
+<script>
+  const ipc = window.licenseAPI;
+
+  // Version label
+  if (ipc && ipc.getVersion) {
+    document.getElementById('versionLabel').textContent = 'v' + ipc.getVersion();
+  }
+
+  // Plan metadata
+  const PLAN_META = {
+    starter: {
+      name: 'Starter Plan Activated',
+      type: 'Single Store',
+      icon: '🏪',
+      color: '#818cf8',
+      cls: 'str',
+      features: [
+        { label: 'POS Terminal',       cls: 'included' },
+        { label: 'Products & Stock',   cls: 'included' },
+        { label: 'Orders & Receipts',  cls: 'included' },
+        { label: 'Reports',            cls: 'included' },
+        { label: 'Discounts',          cls: 'included' },
+        { label: 'User Accounts',      cls: 'included' },
+        { label: 'Multi-Store',        cls: 'enterprise' },
+        { label: 'Advanced Analytics', cls: 'enterprise' },
+      ],
+    },
+    business: {
+      name: 'Business Plan Activated',
+      type: 'Multi-Store',
+      icon: '🏬',
+      color: '#38bdf8',
+      cls: 'biz',
+      features: [
+        { label: 'POS Terminal',       cls: 'included' },
+        { label: 'Products & Stock',   cls: 'included' },
+        { label: 'Orders & Receipts',  cls: 'included' },
+        { label: 'Reports',            cls: 'included' },
+        { label: 'Discounts',          cls: 'included' },
+        { label: 'User Accounts',      cls: 'included' },
+        { label: 'Multi-Store Mgmt',   cls: 'unlocked' },
+        { label: 'Advanced Analytics', cls: 'enterprise' },
+      ],
+    },
+    enterprise: {
+      name: 'Enterprise Plan Activated',
+      type: 'Unlimited Stores',
+      icon: '🏢',
+      color: '#34d399',
+      cls: 'ent',
+      features: [
+        { label: 'POS Terminal',         cls: 'included' },
+        { label: 'Products & Stock',     cls: 'included' },
+        { label: 'Orders & Receipts',    cls: 'included' },
+        { label: 'Reports',              cls: 'included' },
+        { label: 'Discounts',            cls: 'included' },
+        { label: 'User Accounts',        cls: 'included' },
+        { label: 'Multi-Store Mgmt',     cls: 'unlocked' },
+        { label: 'Advanced Analytics',   cls: 'unlocked' },
+      ],
+    },
+  };
+
+  const KEY_PREFIX_MAP = { STR: 'starter', BIZ: 'business', ENT: 'enterprise' };
+
+  // Trial banner
+  async function loadTrialStatus() {
+    if (!ipc || !ipc.getTrial) return;
+    try {
+      const trial = await ipc.getTrial();
+      const banner = document.getElementById('trialBanner');
+      const text   = document.getElementById('trialText');
+      if (!trial.started) {
+        text.innerHTML = 'Start your <strong>' + trial.trialDays + '-day free trial</strong> — no key needed.';
+        banner.style.display = 'flex';
+      } else if (trial.active && trial.daysLeft > 0) {
+        text.innerHTML = 'Trial: <strong>' + trial.daysLeft + ' day' + (trial.daysLeft !== 1 ? 's' : '') + ' remaining</strong>. Enter a key to unlock permanently.';
+        banner.style.display = 'flex';
+      }
+    } catch (e) { /* ignore */ }
+  }
+  loadTrialStatus();
+
+  document.getElementById('trialBtn').addEventListener('click', function () {
+    if (ipc && ipc.useTrial) ipc.useTrial();
+  });
+
+  // Key auto-formatter and live plan detection
+  // Format: BZNX-STR-XXXXXXXX-XXXXXXXX  (4+3+8+8 alphanum, 3 dashes = 26 chars total)
+  document.getElementById('licenseKey').addEventListener('input', function () {
+    var raw = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 23);
+    var out = '';
+    for (var i = 0; i < raw.length; i++) {
+      if (i === 4 || i === 7 || i === 15) out += '-';
+      out += raw[i];
+    }
+    this.value = out;
+    updatePlanDetection(out);
+  });
+
+  function updatePlanDetection(key) {
+    var strip   = document.getElementById('planStrip');
+    var featBox = document.getElementById('featureList');
+    ['str', 'biz', 'ent'].forEach(function (c) {
+      document.getElementById('badge-' + c).classList.remove('active');
+    });
+
+    var m = key.match(/^BZNX-(STR|BIZ|ENT)-/);
+    if (!m) {
+      strip.style.display   = 'none';
+      featBox.style.display = 'none';
+      return;
+    }
+
+    var planKey = KEY_PREFIX_MAP[m[1]];
+    var meta    = PLAN_META[planKey];
+    if (!meta) {
+      strip.style.display   = 'none';
+      featBox.style.display = 'none';
+      return;
+    }
+
+    document.getElementById('badge-' + meta.cls).classList.add('active');
+
+    strip.textContent  = meta.icon + '  ' + meta.type + ' key detected';
+    strip.className    = meta.cls;
+    strip.style.display = 'block';
+
+    var items = document.getElementById('featureItems');
+    items.innerHTML = meta.features.map(function (f) {
+      return '<li class="' + f.cls + '">' + f.label + '</li>';
+    }).join('');
+    featBox.style.display = 'block';
+  }
+
+  // Activate form
+  var submitBtn = document.getElementById('submitBtn');
+  var statusMsg = document.getElementById('statusMsg');
+
+  function showStatus(msg, type) {
+    statusMsg.textContent = msg;
+    statusMsg.className   = 'status ' + type;
+  }
+
+  document.getElementById('activationForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    statusMsg.className = 'status';
+    document.getElementById('planActivated').classList.remove('visible');
+
+    var licenseKey = document.getElementById('licenseKey').value.trim().toUpperCase();
+    if (!licenseKey) return showStatus('Please enter your license key.', 'error');
+
+    if (!/^BZNX-(STR|BIZ|ENT)-[A-F0-9]{8}-[A-F0-9]{8}$/.test(licenseKey)) {
+      return showStatus('Invalid key format. Expected: BZNX-STR-XXXXXXXX-XXXXXXXX', 'error');
+    }
+
+    submitBtn.disabled  = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Activating...';
+
+    try {
+      var result = await ipc.activate({ licenseKey: licenseKey });
+      if (result.success) {
+        var plan = result.plan || 'starter';
+        var meta = PLAN_META[plan] || PLAN_META.starter;
+        var maxDev = result.maxDevices;
+
+        document.getElementById('planIcon').textContent    = meta.icon;
+        document.getElementById('planName').textContent    = meta.name;
+        document.getElementById('planName').style.color    = meta.color;
+        document.getElementById('planType').textContent    = meta.type;
+        document.getElementById('planType').style.color    = meta.color;
+        document.getElementById('planDevices').textContent =
+          maxDev === 'Unlimited'
+            ? 'Unlimited devices licensed'
+            : maxDev + ' device' + (Number(maxDev) !== 1 ? 's' : '') + ' licensed';
+        document.getElementById('planActivated').classList.add('visible');
+        document.getElementById('featureList').style.display = 'none';
+        document.getElementById('planStrip').style.display   = 'none';
+        showStatus('Activation successful! Loading Biznex BOS...', 'success');
+        setTimeout(function () { ipc.activationDone(); }, 2000);
+      } else {
+        showStatus(result.error || 'Activation failed. Please check your key and try again.', 'error');
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Activate';
+      }
+    } catch (err) {
+      showStatus('Unexpected error: ' + err.message, 'error');
+      submitBtn.disabled    = false;
+      submitBtn.textContent = 'Activate';
+    }
+  });
+
+  document.getElementById('buyLink').addEventListener('click', function (e) {
+    e.preventDefault();
+    if (ipc && ipc.openExternal) ipc.openExternal('http://localhost:5000');
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+node_modules/
+dist/
+logs/
+*.log
+
+# Environment secrets
+.env
+
+# SQLite databases (including WAL journal files)
+server/biznex.db
+server/biznex.db-journal
+server/biznex.db-wal
+server/biznex.db-shm
+proto-license.db
+proto-license.db-wal
+proto-license.db-shm
+
+# DB backups
+server/backups/*.db
+
+# OS
+.DS_Store
+Thumbs.db

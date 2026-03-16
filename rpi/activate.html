@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biznex BOS — Activate</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --green: #34d399;
+    --amber: #f59e0b;
+    --red: #f87171;
+    --str: #818cf8;
+    --biz: #38bdf8;
+    --ent: #34d399;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .container { width: 100%; max-width: 480px; }
+
+  /* Logo */
+  .logo-wrap { text-align: center; margin-bottom: 32px; }
+  .logo-wrap img { height: 48px; }
+  .logo-wrap h1 { font-size: 22px; font-weight: 700; margin-top: 10px; letter-spacing: -0.5px; }
+  .logo-wrap p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  /* Plan tier badges */
+  .plans { display: flex; gap: 8px; margin-bottom: 24px; }
+  .plan {
+    flex: 1; border-radius: 10px; border: 1px solid var(--border);
+    padding: 12px 10px; text-align: center; background: var(--card);
+  }
+  .plan .badge {
+    display: inline-block; border-radius: 4px; font-size: 10px;
+    font-weight: 800; padding: 2px 8px; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .plan.str .badge { background: #818cf820; color: var(--str); border: 1px solid #818cf840; }
+  .plan.biz .badge { background: #38bdf820; color: var(--biz); border: 1px solid #38bdf840; }
+  .plan.ent .badge { background: #34d39920; color: var(--ent); border: 1px solid #34d39940; }
+  .plan-name { font-size: 11px; font-weight: 600; }
+  .plan-stores { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 24px;
+  }
+  .card h2 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .card p { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+  /* Trial banner */
+  #trialBanner {
+    background: #f59e0b18; border: 1px solid #f59e0b40;
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 20px;
+    display: none;
+  }
+  #trialBanner.show { display: block; }
+  #trialBanner .trial-title { font-size: 13px; font-weight: 700; color: var(--amber); margin-bottom: 4px; }
+  #trialBanner .trial-sub { font-size: 12px; color: #cbd5e1; line-height: 1.4; }
+  #trialBanner button {
+    margin-top: 12px; width: 100%; padding: 9px;
+    background: #f59e0b; color: #0f172a; border: none;
+    border-radius: 7px; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: opacity .15s;
+  }
+  #trialBanner button:hover { opacity: 0.85; }
+
+  /* Input */
+  .input-group { margin-bottom: 16px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  input[type=text] {
+    width: 100%; padding: 12px 14px;
+    background: #0f172a; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-size: 15px; font-family: 'Courier New', monospace;
+    letter-spacing: 2px; text-transform: uppercase;
+    outline: none; transition: border-color .2s;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+  input[type=text]::placeholder { color: var(--muted); letter-spacing: 1px; font-size: 13px; }
+  .input-hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+  /* Button */
+  .btn-primary {
+    width: 100%; padding: 13px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 9px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: background .15s; margin-top: 4px;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  /* Status messages */
+  #msg {
+    margin-top: 14px; padding: 12px 14px;
+    border-radius: 8px; font-size: 13px; display: none;
+  }
+  #msg.error   { background: #f8717120; border: 1px solid #f8717140; color: var(--red); display: block; }
+  #msg.success { background: #34d39920; border: 1px solid #34d39940; color: var(--green); display: block; }
+
+  /* Activated card */
+  #activatedCard {
+    background: #34d39910; border: 1px solid #34d39940;
+    border-radius: 12px; padding: 20px; text-align: center;
+    display: none; margin-top: 20px;
+  }
+  #activatedCard.show { display: block; }
+  #activatedCard .check { font-size: 36px; margin-bottom: 8px; }
+  #activatedCard h3 { font-size: 16px; font-weight: 700; color: var(--green); }
+  #activatedCard .plan-chip {
+    display: inline-block; margin: 8px 0 4px;
+    padding: 3px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  }
+  #activatedCard p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  #activatedCard .launch-btn {
+    margin-top: 16px; padding: 11px 32px;
+    background: var(--green); color: #0f172a;
+    border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: opacity .15s;
+  }
+  #activatedCard .launch-btn:hover { opacity: 0.85; }
+
+  .divider { text-align: center; color: var(--muted); font-size: 12px; margin: 18px 0; position: relative; }
+  .divider::before, .divider::after {
+    content: ''; position: absolute; top: 50%; width: 42%;
+    height: 1px; background: var(--border);
+  }
+  .divider::before { left: 0; } .divider::after { right: 0; }
+
+  .footer { text-align: center; margin-top: 20px; font-size: 11px; color: var(--muted); }
+  .footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Logo -->
+  <div class="logo-wrap">
+    <img src="/logo.png" onerror="this.style.display='none'" alt="Biznex BOS">
+    <h1>Biznex BOS</h1>
+    <p>Raspberry Pi Edition — License Activation</p>
+  </div>
+
+  <!-- Plan tier reference -->
+  <div class="plans">
+    <div class="plan str">
+      <div class="badge">STR</div>
+      <div class="plan-name">Starter</div>
+      <div class="plan-stores">1 Store</div>
+    </div>
+    <div class="plan biz">
+      <div class="badge">BIZ</div>
+      <div class="plan-name">Business</div>
+      <div class="plan-stores">Up to 10 Stores</div>
+    </div>
+    <div class="plan ent">
+      <div class="badge">ENT</div>
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-stores">Unlimited</div>
+    </div>
+  </div>
+
+  <!-- Activation card -->
+  <div class="card">
+    <h2>Enter Your License Key</h2>
+    <p>Enter the key you received after purchasing Biznex BOS. The key format determines your plan tier and store limit.</p>
+
+    <!-- Trial banner (shown if trial available or running) -->
+    <div id="trialBanner">
+      <div class="trial-title" id="trialTitle">14-Day Free Trial Available</div>
+      <div class="trial-sub" id="trialSub">Try Biznex BOS free for 14 days — no key needed. Full access to all features.</div>
+      <button id="trialBtn" onclick="startTrial()">Start Free Trial</button>
+    </div>
+
+    <div class="divider" id="orDivider">or activate with a key</div>
+
+    <div class="input-group">
+      <label>License Key</label>
+      <input type="text" id="keyInput"
+        placeholder="BZNX-STR-XXXXXXXX-XXXXXXXX"
+        maxlength="26"
+        oninput="formatKey(this)"
+        autocomplete="off" autocorrect="off" spellcheck="false">
+      <div class="input-hint">Format: BZNX-{STR|BIZ|ENT}-XXXXXXXX-XXXXXXXX</div>
+    </div>
+
+    <button class="btn-primary" id="activateBtn" onclick="activate()">Activate License</button>
+
+    <div id="msg"></div>
+
+    <!-- Success card -->
+    <div id="activatedCard">
+      <div class="check">✅</div>
+      <h3>Activated Successfully!</h3>
+      <div class="plan-chip" id="planChip"></div>
+      <p id="planDesc"></p>
+      <button class="launch-btn" onclick="launchApp()">Open Biznex BOS →</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Don't have a key? <a href="http://localhost:5000" target="_blank">Purchase a license →</a>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+
+  // ── On load: check trial status ─────────────────────────────────────────
+  (async function init() {
+    if (params.get('expired') === '1') {
+      showMsg('error', 'Your 14-day trial has expired. Please enter a license key to continue.');
+      document.getElementById('trialBanner').style.display = 'none';
+      document.getElementById('orDivider').style.display = 'none';
+      return;
+    }
+
+    try {
+      const r = await fetch('/api/rpi/trial', { method: 'POST' });
+      const t = await r.json();
+
+      const banner   = document.getElementById('trialBanner');
+      const orDiv    = document.getElementById('orDivider');
+      const trialBtn = document.getElementById('trialBtn');
+
+      if (t.active) {
+        // Trial is currently running
+        document.getElementById('trialTitle').textContent = `Trial Active — ${t.daysLeft} Day${t.daysLeft !== 1 ? 's' : ''} Remaining`;
+        document.getElementById('trialSub').textContent   = 'You are currently on a free trial. Enter a license key to unlock permanently.';
+        trialBtn.textContent = 'Continue with Trial';
+        banner.classList.add('show');
+        orDiv.style.display = 'flex';
+      } else if (!t.startedAt) {
+        // Trial not started yet — offer it
+        banner.classList.add('show');
+        orDiv.style.display = 'flex';
+      } else {
+        // Trial expired
+        orDiv.textContent = 'Enter your license key to continue';
+        orDiv.style.display = 'flex';
+      }
+    } catch (e) {
+      // License server might not be up yet — hide trial section silently
+      document.getElementById('trialBanner').style.display = 'none';
+      document.getElementById('orDivider').style.display = 'none';
+    }
+  })();
+
+  // ── Auto-format key input ────────────────────────────────────────────────
+  function formatKey(el) {
+    let v = el.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+    // Insert dashes at positions 4, 8, 17
+    let out = '';
+    const parts = [4, 3, 8, 8]; // BZNX-STR-XXXXXXXX-XXXXXXXX
+    let i = 0;
+    for (let p = 0; p < parts.length; p++) {
+      if (i >= v.length) break;
+      out += (p > 0 ? '-' : '') + v.slice(i, i + parts[p]);
+      i += parts[p];
+    }
+    el.value = out;
+  }
+
+  // ── Activate with license key ─────────────────────────────────────────────
+  async function activate() {
+    const key = document.getElementById('keyInput').value.trim();
+    if (!key || key.length < 10) {
+      showMsg('error', 'Please enter a valid license key.');
+      return;
+    }
+
+    const btn = document.getElementById('activateBtn');
+    btn.disabled = true;
+    btn.textContent = 'Activating…';
+    clearMsg();
+
+    try {
+      const r = await fetch('/api/rpi/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ licenseKey: key }),
+      });
+      const data = await r.json();
+
+      if (data.ok) {
+        showSuccess(data);
+      } else {
+        showMsg('error', data.error || 'Activation failed. Check your key and try again.');
+      }
+    } catch (e) {
+      showMsg('error', 'Could not reach license server. Make sure biznex-license is running (pm2 start rpi/ecosystem.config.js).');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Activate License';
+    }
+  }
+
+  // ── Start trial ───────────────────────────────────────────────────────────
+  async function startTrial() {
+    const btn = document.getElementById('trialBtn');
+    btn.disabled = true;
+    btn.textContent = 'Starting…';
+    try {
+      const r = await fetch('/api/rpi/trial', { method: 'POST' });
+      const t = await r.json();
+      if (t.ok) {
+        // Brief pause then redirect
+        btn.textContent = `✔ Trial started (${t.daysLeft} days)`;
+        setTimeout(() => { location.href = '/'; }, 1200);
+      }
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Start Free Trial';
+      showMsg('error', 'Could not start trial. Try refreshing the page.');
+    }
+  }
+
+  // ── Show success card ─────────────────────────────────────────────────────
+  function showSuccess(data) {
+    document.getElementById('keyInput').style.display = 'none';
+    document.getElementById('activateBtn').style.display = 'none';
+    document.querySelector('.input-group').style.display = 'none';
+    document.getElementById('trialBanner').style.display = 'none';
+    document.getElementById('orDivider').style.display   = 'none';
+    clearMsg();
+
+    const planColors = { starter: '#818cf8', business: '#38bdf8', enterprise: '#34d399' };
+    const col = planColors[data.plan] || '#6366f1';
+    const chip = document.getElementById('planChip');
+    chip.textContent = data.planLabel || data.plan;
+    chip.style.background = col + '25';
+    chip.style.color = col;
+    chip.style.border = `1px solid ${col}50`;
+
+    document.getElementById('planDesc').textContent = data.maxDevices === null
+      ? 'Unlimited stores & devices'
+      : `Up to ${data.maxDevices === -1 ? 'unlimited' : data.maxDevices} device${data.maxDevices !== 1 ? 's' : ''}`;
+
+    document.getElementById('activatedCard').classList.add('show');
+  }
+
+  function launchApp() { location.href = '/'; }
+
+  function showMsg(type, text) {
+    const el = document.getElementById('msg');
+    el.className = type;
+    el.textContent = text;
+  }
+  function clearMsg() {
+    const el = document.getElementById('msg');
+    el.className = '';
+    el.textContent = '';
+  }
+</script>
+</body>
+</html>

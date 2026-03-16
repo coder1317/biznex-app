@@ -1,0 +1,147 @@
+{
+  "name": "biznex-bos",
+  "version": "1.0.0",
+  "description": "Biznex Business OS — POS + inventory for desktop and Raspberry Pi",
+  "author": "Biznex",
+  "license": "ISC",
+  "main": "electron-shell/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "nodemon --exec electron .",
+    "start:license": "node proto-license-server.js",
+    "start:server": "node server/server.js",
+    "gen-icons": "node scripts/gen-icons.mjs",
+    "start:rpi": "SERVE_STATIC=true node server/server-rpi.js",
+    "dev:server": "nodemon server/server.js",
+    "backup:db": "node server/backup-db.js",
+    "lint": "eslint server/**/*.js client/**/*.js electron-shell/**/*.js *.js",
+    "lint:fix": "eslint server/**/*.js client/**/*.js electron-shell/**/*.js *.js --fix",
+    "test": "jest",
+    "pack": "electron-builder --dir",
+    "build:win": "electron-builder --win --x64",
+    "build:linux": "electron-builder --linux --x64",
+    "build:rpi": "electron-builder --linux --arm64",
+    "package:rpi": "node scripts/package-rpi.mjs",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.biznex.bos",
+    "productName": "Biznex BOS",
+    "copyright": "Copyright © 2026 Biznex",
+    "compression": "normal",
+    "directories": {
+      "output": "../biznex-dist",
+      "buildResources": "build-assets"
+    },
+    "files": [
+      "electron-shell/**/*",
+      "server/**/*",
+      "!server/biznex.db",
+      "!server/biznex.db-wal",
+      "!server/biznex.db-shm",
+      "!server/proto-license.db",
+      "!server/backups/**",
+      "!server/logs/**",
+      "!server/test-*.js",
+      "client/**/*",
+      "node_modules/**/*",
+      "proto-license-server.js",
+      "package.json",
+      "!.env",
+      "!**/*.test.js",
+      "!**/__tests__/**"
+    ],
+    "extraResources": [
+      {
+        "from": ".env.example",
+        "to": ".env.example"
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/sqlite3/**/*",
+      "node_modules/usb/**/*",
+      "node_modules/@serialport/**/*",
+      "node_modules/node-hid/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build-assets/icon.ico",
+      "artifactName": "Biznex-BOS-Setup-${version}.${ext}",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build-assets/icon.png",
+      "category": "Office",
+      "maintainer": "Biznex <support@biznex.io>",
+      "artifactName": "Biznex-BOS-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Biznex BOS",
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "build-assets/icon.ico",
+      "uninstallerIcon": "build-assets/icon.ico",
+      "installerHeaderIcon": "build-assets/icon.ico",
+      "guid": "A8B5E2C3-3F4D-4E6A-92B1-CF1234567890"
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://releases.biznex.io/bos/",
+      "channel": "latest"
+    }
+  },
+  "dependencies": {
+    "@sentry/electron": "^7.9.0",
+    "bcryptjs": "^3.0.3",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "electron-updater": "^6.8.3",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.2.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.1.0",
+    "joi": "^17.12.0",
+    "jsonwebtoken": "^9.0.3",
+    "node-thermal-printer": "^4.6.0",
+    "pg": "^8.19.0",
+    "socket.io": "^4.8.3",
+    "sqlite3": "^5.0.2",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^26.8.1",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.3",
+    "prettier": "^3.2.5",
+    "supertest": "^6.3.3",
+    "to-ico": "^1.1.5"
+  }
+}
