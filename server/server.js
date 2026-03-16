@@ -68,7 +68,10 @@ initSentry(app); // must be before any routes
 const httpServer = require('http').createServer(app);
 const { Server: SocketIO } = require('socket.io');
 const io = new SocketIO(httpServer, {
-    cors: { origin: '*', credentials: true },
+    cors: { 
+        origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
+        credentials: true 
+    },
     transports: ['websocket', 'polling'],
 });
 io.on('connection', (socket) => {
@@ -79,9 +82,10 @@ logger.info('🔌 Socket.io attached');
 
 app.use(helmet());
 app.use(cors({
-    // Allow any origin in Electron (file://) and configurable for web deployment
-    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
-    credentials: true
+    // Allow specific origins (configurable via env, defaults to localhost)
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000', 'http://localhost:5173', 'file://'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(bodyParser.json());
 
@@ -89,7 +93,9 @@ app.use(bodyParser.json());
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again later.'
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 app.use(limiter);
 
@@ -310,4 +316,23 @@ httpServer.on('error', (err) => {
     }
 });
 
-httpServer.listen(PORT, () => logger.info(`🚀 Backend + Socket.io running on port ${PORT}`));
+// HTTPS Support (optional, for production)
+const httpsOptions = {
+    key: process.env.HTTPS_KEY_PATH ? fs.readFileSync(process.env.HTTPS_KEY_PATH, 'utf8') : null,
+    cert: process.env.HTTPS_CERT_PATH ? fs.readFileSync(process.env.HTTPS_CERT_PATH, 'utf8') : null,
+};
+
+if (process.env.FORCE_HTTPS === 'true' && httpsOptions.key && httpsOptions.cert) {
+    const https = require('https');
+    https.createServer(httpsOptions, app).listen(process.env.HTTPS_PORT || 443, () => {
+        logger.info(`🚀 Backend running on HTTPS port ${process.env.HTTPS_PORT || 443}`);
+    });
+    // Optional: redirect HTTP to HTTPS
+    require('http').createServer((req, res) => {
+        res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
+        res.end();
+    }).listen(PORT);
+    logger.info(`📡 HTTP to HTTPS redirect on port ${PORT}`);
+} else {
+    httpServer.listen(PORT, () => logger.info(`🚀 Backend + Socket.io running on port ${PORT}`));
+}

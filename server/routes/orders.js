@@ -117,7 +117,7 @@ module.exports = function createRouter(db, io, logger, getPrinter, printReceipt)
             await dbRun('COMMIT', []);
 
             const createdAt = new Date().toISOString();
-            res.json({ order_id: orderId, total, subtotal, discount_amount: discountAmount, discount_code, created_at: createdAt });
+            res.status(201).json({ id: orderId, order_id: orderId, total, subtotal, discount_amount: discountAmount, discount_code, created_at: createdAt });
             io.emit('order:created', { id: orderId, total });
 
             // Fire-and-forget print

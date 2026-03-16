@@ -38,8 +38,18 @@ module.exports = function createRouter(db, io) {
                         return res.status(400).json({ error: 'Product with this name already exists' });
                     return res.status(500).json({ error: err.message });
                 }
-                io.emit('product:created', { id: this.lastID, name, category });
-                res.json({ id: this.lastID });
+                const productId = this.lastID;
+                io.emit('product:created', { id: productId, name, category });
+                res.status(201).json({ 
+                    id: productId, 
+                    name, 
+                    price: Number(price), 
+                    stock: Number(stock), 
+                    threshold: threshold || 5, 
+                    category, 
+                    image: image || null, 
+                    available: availInsert 
+                });
             }
         );
     });
