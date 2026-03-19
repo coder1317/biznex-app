@@ -9,6 +9,7 @@ const winston = require("winston");
 const path = require("path");
 const fs = require("fs");
 const db = require("./db");
+const license = require('./license-manager');
 
 // Safety net: JWT_SECRET must always have a value.
 // On a fresh packaged install main.js auto-generates and sets it before
@@ -80,6 +81,19 @@ io.on('connection', (socket) => {
 });
 logger.info('🔌 Socket.io attached');
 
+// ── LicenseManager startup ────────────────────────────────────────────────────
+// Run init() early so the gate + plan are known before any requests arrive.
+// Events are wired to logger so every state change is recorded.
+license.on('activated',        (s) => logger.info(`✅ License active — plan: ${s.plan}`, { licenseKey: s.licenseKey }));
+license.on('trial-active',     (s) => logger.info(`⏱ Trial active — ${s.daysLeft} day(s) remaining`));
+license.on('needs-activation', ()  => logger.warn('🔑 No active license — activation required'));
+license.on('expired',          ()  => logger.warn('⌛ License/trial has expired'));
+license.on('validation-ok',    (s) => logger.info(`🔄 License re-validated — plan: ${s.plan}`));
+license.on('validation-fail',  (s) => logger.warn(`⚠️ License validation failed: ${s.reason}`));
+
+license.init().catch((err) => logger.error('LicenseManager.init() threw:', err));
+
+
 app.use(helmet());
 app.use(cors({
     // Allow specific origins (configurable via env, defaults to localhost)
@@ -99,88 +113,35 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// ── RPi License Gate ─────────────────────────────────────────────────────────
-// Only active when running in headless/Pi mode (SERVE_STATIC + RPI_MODE env vars).
-// Redirects Chromium to /license-activate until a valid key or trial exists.
+// ── License Manager ────────────────────────────────────────────────────────────
+// Initialised here. Routes (/api/license/status, /api/license/activate, etc.)
+// are registered below after the other route modules.
+// The gate (redirect to /license-activate) is active in headless/RPi mode.
+
+// Serve the activation page (RPi/headless mode only)
 if (process.env.SERVE_STATIC === 'true' && process.env.RPI_MODE === 'true') {
-    const _fs   = require('fs');
-    const _root = path.join(__dirname, '..');
-    const _LIC  = path.join(_root, 'rpi-license.json');
-    const _TRL  = path.join(_root, 'rpi-trial.json');
-    const _TDAYS = parseInt(process.env.TRIAL_DAYS || '14', 10);
-
-    function _loadJSON(f) { try { return JSON.parse(_fs.readFileSync(f, 'utf8')); } catch { return null; } }
-    function _trialActive(t) {
-        if (!t || !t.startedAt) return false;
-        return (Date.now() - new Date(t.startedAt).getTime()) / 86400000 < _TDAYS;
-    }
-    function _daysLeft(t) {
-        if (!t || !t.startedAt) return 0;
-        return Math.max(0, Math.ceil(_TDAYS - (Date.now() - new Date(t.startedAt).getTime()) / 86400000));
-    }
-
-    // Serve the activation page
     app.get('/license-activate', (req, res) => {
-        res.sendFile(path.join(_root, 'rpi', 'activate.html'));
+        res.sendFile(path.join(__dirname, '..', 'rpi', 'activate.html'));
     });
 
-    // Start / read trial
+    // Trial: start or read
     app.post('/api/rpi/trial', (req, res) => {
-        let t = _loadJSON(_TRL);
-        if (!t) {
-            t = { startedAt: new Date().toISOString(), trialDays: _TDAYS };
-            _fs.writeFileSync(_TRL, JSON.stringify(t, null, 2));
-        }
-        res.json({ ok: true, active: _trialActive(t), daysLeft: _daysLeft(t), trialDays: _TDAYS, startedAt: t.startedAt });
+        const trial = license.startOrReadTrial();
+        res.json({ ok: true, ...trial });
     });
 
-    // Activate key (proxy to license server on port 4000)
-    app.post('/api/rpi/activate', express.json(), (req, res) => {
-        const { licenseKey } = req.body || {};
-        if (!licenseKey) return res.status(400).json({ ok: false, error: 'licenseKey is required' });
-
-        const deviceId = require('os').hostname() + '-rpi';
-        const payload  = JSON.stringify({ key: licenseKey, device_id: deviceId, device_name: 'Raspberry Pi' });
-        const PLAN_LABELS = { starter: 'Starter (1 store)', business: 'Business (up to 10 stores)', enterprise: 'Enterprise (unlimited)' };
-
-        const proxyReq = require('http').request({
-            hostname: '127.0.0.1', port: process.env.LICENSE_PORT || 4000,
-            path: '/api/license/activate', method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
-        }, (pRes) => {
-            let data = '';
-            pRes.on('data', c => { data += c; });
-            pRes.on('end', () => {
-                try {
-                    const r = JSON.parse(data);
-                    if (pRes.statusCode === 200 && r.plan) {
-                        const stored = { licenseKey, plan: r.plan, planLabel: PLAN_LABELS[r.plan] || r.plan,
-                            maxDevices: r.maxDevices, deviceId, activatedAt: new Date().toISOString(), licenseToken: r.token || null };
-                        _fs.writeFileSync(_LIC, JSON.stringify(stored, null, 2));
-                        return res.json({ ok: true, ...stored });
-                    }
-                    res.status(pRes.statusCode).json({ ok: false, error: r.error || 'Activation failed' });
-                } catch { res.status(500).json({ ok: false, error: 'Invalid license server response' }); }
-            });
-        });
-        proxyReq.on('error', () => res.status(503).json({ ok: false, error: 'License server not reachable. Ensure biznex-license PM2 process is running.' }));
-        proxyReq.write(payload);
-        proxyReq.end();
-    });
-
-    // Gate: block all non-API/non-activation requests if not licensed
+    // Gate: redirect to activation page if no valid license/trial
     app.use((req, res, next) => {
-        if (req.url.startsWith('/api/') || req.url === '/license-activate' ||
-            req.url.startsWith('/license-activate?') || req.url === '/favicon.ico') return next();
-        const lic = _loadJSON(_LIC);
-        const trl = _loadJSON(_TRL);
-        if (lic && lic.licenseKey) return next();
-        if (_trialActive(trl))    return next();
-        if (trl && !_trialActive(trl)) return res.redirect('/license-activate?expired=1');
+        const allowed = req.url.startsWith('/api/') ||
+                        req.url === '/license-activate' ||
+                        req.url.startsWith('/license-activate?') ||
+                        req.url === '/favicon.ico';
+        if (allowed) return next();
+        if (license.isActive()) return next();
         res.redirect('/license-activate');
     });
 
-    logger.info('🔐 RPi license gate active');
+    logger.info('🔐 RPi license gate active (powered by LicenseManager)');
 }
 
 // Auth middleware & helpers (extracted to module)
@@ -207,6 +168,50 @@ app.use('/api/reports',   require('./routes/reports')(db));
 app.use('/api/inventory', require('./routes/inventory')(db));
 app.use('/api/suppliers', require('./routes/suppliers')(db));
 app.use('/api/settings',  require('./routes/settings')(db, logger));
+
+// ── License API ────────────────────────────────────────────────────────────────
+/**
+ * GET /api/license/status
+ * Returns the current license plan, features, and metadata.
+ * Safe to call from the frontend at any time.
+ */
+app.get('/api/license/status', (req, res) => {
+    res.json(license.getStatus());
+});
+
+/**
+ * POST /api/license/activate
+ * Body: { licenseKey: string }
+ * Activates the given key against the cloud server and stores the token.
+ */
+app.post('/api/license/activate', express.json(), async (req, res) => {
+    const { licenseKey } = req.body || {};
+    if (!licenseKey) return res.status(400).json({ ok: false, error: 'licenseKey is required' });
+    const result = await license.activate(licenseKey);
+    res.status(result.ok ? 200 : 502).json(result);
+});
+
+/**
+ * POST /api/license/validate
+ * Re-validates the current license against the cloud server.
+ * Useful for a manual refresh or after going back online.
+ */
+app.post('/api/license/validate', async (req, res) => {
+    const result = await license.validate();
+    res.json(result);
+});
+
+/**
+ * GET /api/license/features
+ * Returns just the feature flags for the current plan.
+ * Handy for conditional UI rendering.
+ */
+app.get('/api/license/features', (req, res) => {
+    res.json({
+        plan:     license.getPlan(),
+        features: license.getFeatures(),
+    });
+});
 
 
 // Global error handler
