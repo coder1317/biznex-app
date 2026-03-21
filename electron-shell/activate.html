@@ -79,18 +79,34 @@
   /* Trial banner */
   .trial-banner {
     background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
-    border-radius: 8px; padding: 9px 13px; margin-bottom: 16px;
-    display: none; align-items: center; justify-content: space-between; gap: 10px;
+    border-radius: 8px; padding: 12px 13px; margin-bottom: 16px;
+    display: none; line-height: 1.6;
   }
-  .trial-banner p { font-size: 12px; color: #fcd34d; line-height: 1.5; }
+  .trial-banner p { font-size: 12px; color: #fcd34d; margin-bottom: 8px; }
   .trial-banner strong { color: #fde68a; }
+  .trial-countdown {
+    font-weight: 700; color: #fde68a; font-size: 16px; letter-spacing: 0.5px;
+    display: flex; align-items: center; gap: 8px; margin: 6px 0;
+  }
+  .countdown-badge { background: rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 4px; }
+  .trial-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .btn-trial, .btn-upgrade {
+    flex: 1; padding: 8px 12px;
+    border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s; border: none;
+    text-align: center;
+  }
   .btn-trial {
-    flex-shrink: 0; padding: 5px 11px;
     background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.4);
-    border-radius: 6px; color: #fcd34d; font-size: 12px; font-weight: 600;
-    cursor: pointer; white-space: nowrap; transition: background 0.15s;
+    color: #fcd34d;
   }
   .btn-trial:hover { background: rgba(245,158,11,0.35); }
+  .btn-upgrade {
+    background: linear-gradient(135deg, rgba(34,197,94,0.8), rgba(22,163,74,0.8));
+    border: 1px solid rgba(34,197,94,0.5); color: #bbf7d0;
+  }
+  .btn-upgrade:hover { background: linear-gradient(135deg, rgba(34,197,94,1), rgba(22,163,74,1)); }
+  .btn-upgrade:disabled { opacity: 0.6; cursor: not-allowed; }
 
   /* Form */
   .section-label { font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
@@ -206,7 +222,22 @@
   <!-- Trial banner -->
   <div class="trial-banner" id="trialBanner">
     <p id="trialText">You have a <strong>14-day free trial</strong> available.</p>
-    <button class="btn-trial" id="trialBtn">Start Trial</button>
+    <div id="trialCountdown" style="display:none;">
+      <div class="trial-countdown">
+        <span>⏱ Trial:</span>
+        <span class="countdown-badge" id="daysLeft">14 days</span>
+      </div>
+      <div class="trial-actions">
+        <button class="btn-trial" id="continueTrial">Continue Trial</button>
+        <button class="btn-upgrade" id="upgradeBtn">Upgrade Now →</button>
+      </div>
+    </div>
+    <div id="trialStartActions" style="display:none;">
+      <div class="trial-actions">
+        <button class="btn-trial" id="trialBtn">Start 14-Day Trial</button>
+        <button class="btn-upgrade" id="buyNowBtn">Buy License →</button>
+      </div>
+    </div>
   </div>
 
   <p class="section-label">Enter Your License Key</p>
@@ -307,27 +338,120 @@
 
   const KEY_PREFIX_MAP = { STR: 'starter', BIZ: 'business', ENT: 'enterprise' };
 
-  // Trial banner
+  let trialCountdownInterval = null;
+
+  // Trial banner with countdown
   async function loadTrialStatus() {
     if (!ipc || !ipc.getTrial) return;
     try {
       const trial = await ipc.getTrial();
       const banner = document.getElementById('trialBanner');
       const text   = document.getElementById('trialText');
+      const countdownDiv = document.getElementById('trialCountdown');
+      const startActionsDiv = document.getElementById('trialStartActions');
+
       if (!trial.started) {
-        text.innerHTML = 'Start your <strong>' + trial.trialDays + '-day free trial</strong> — no key needed.';
-        banner.style.display = 'flex';
+        // Trial not started yet
+        startActionsDiv.style.display = 'block';
+        banner.style.display = 'block';
       } else if (trial.active && trial.daysLeft > 0) {
-        text.innerHTML = 'Trial: <strong>' + trial.daysLeft + ' day' + (trial.daysLeft !== 1 ? 's' : '') + ' remaining</strong>. Enter a key to unlock permanently.';
-        banner.style.display = 'flex';
+        // Trial is active with days remaining
+        text.innerHTML = 'Your trial is active. Enter a key to continue or upgrade to a full license.';
+        document.getElementById('daysLeft').textContent = trial.daysLeft + ' día' + (trial.daysLeft !== 1 ? 's' : '') + ' left';
+        countdownDiv.style.display = 'block';
+        banner.style.display = 'block';
+        updateCountdown(trial.daysLeft);
+      } else if (trial.daysLeft <= 0) {
+        // Trial expired
+        text.innerHTML = '⌛ <strong>Your trial has expired.</strong> Enter a license key or purchase one.';
+        banner.style.display = 'block';
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) { console.error('Trial status error:', e); }
   }
+
+  function updateCountdown(daysLeft) {
+    const badge = document.getElementById('daysLeft');
+    if (badge) {
+      badge.textContent = daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' left';
+    }
+  }
+
   loadTrialStatus();
 
-  document.getElementById('trialBtn').addEventListener('click', function () {
-    if (ipc && ipc.useTrial) ipc.useTrial();
+  // Trial buttons
+  document.getElementById('trialBtn')?.addEventListener('click', function () {
+    if (ipc && ipc.useTrial) {
+      ipc.useTrial();
+      // Reload trial status after a short delay
+      setTimeout(() => loadTrialStatus(), 500);
+    }
   });
+
+  document.getElementById('continueTrial')?.addEventListener('click', function () {
+    if (ipc && ipc.activationDone) ipc.activationDone();
+  });
+
+  // Upgrade button - opens portal and polls for license
+  async function handleUpgrade() {
+    const upgradeBtn = document.getElementById('upgradeBtn') || document.getElementById('buyNowBtn');
+    if (!upgradeBtn) return;
+
+    const originalText = upgradeBtn.textContent;
+    upgradeBtn.disabled = true;
+    upgradeBtn.textContent = '⏳ Opening portal...';
+
+    try {
+      // Open portal
+      if (ipc && ipc.openExternal) {
+        ipc.openExternal('http://localhost:5000');
+      }
+
+      // Poll for license every 3 seconds for up to 5 minutes
+      let pollCount = 0;
+      const maxPolls = 100; // 5 minutes with 3-second intervals
+
+      const pollInterval = setInterval(async () => {
+        pollCount++;
+
+        try {
+          const status = await ipc.checkOffline?.() || {};
+          if (status.plan && status.plan !== 'none') {
+            // License found! Show success and close
+            clearInterval(pollInterval);
+            showStatus('🎉 License activated! Loading...', 'success');
+            setTimeout(() => {
+              if (ipc && ipc.activationDone) ipc.activationDone();
+            }, 1500);
+            return;
+          }
+        } catch (e) {
+          console.log('Poll check:', e.message);
+        }
+
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          upgradeBtn.disabled = false;
+          upgradeBtn.textContent = originalText;
+          showStatus('Portal timeout. Please manually refresh this window once you have your license.', 'info');
+        }
+      }, 3000);
+
+      // Also set a visual counter
+      let countdown = 300;
+      const countInterval = setInterval(() => {
+        countdown--;
+        if (countdown <= 0) clearInterval(countInterval);
+      }, 1000);
+
+    } catch (err) {
+      upgradeBtn.disabled = false;
+      upgradeBtn.textContent = originalText;
+      showStatus('Error: ' + err.message, 'error');
+    }
+  }
+
+  document.getElementById('upgradeBtn')?.addEventListener('click', handleUpgrade);
+  document.getElementById('buyNowBtn')?.addEventListener('click', handleUpgrade);
 
   // Key auto-formatter and live plan detection
   // Format: BZNX-STR-XXXXXXXX-XXXXXXXX  (4+3+8+8 alphanum, 3 dashes = 26 chars total)
@@ -436,7 +560,7 @@
 
   document.getElementById('buyLink').addEventListener('click', function (e) {
     e.preventDefault();
-    if (ipc && ipc.openExternal) ipc.openExternal('http://localhost:5000');
+    handleUpgrade();
   });
 </script>
 </body>

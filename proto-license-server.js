@@ -312,27 +312,32 @@ async function handleAdminGenerateKey(req, res) {
     const cfg = PLAN_CONFIG[plan];
     const maxDevices = cfg.maxDevices === Infinity ? 999 : cfg.maxDevices;
 
-    // Idempotent — if the key is already registered, return it without error
-    const existing = await dbGet('SELECT * FROM license_keys WHERE key=?', [key]);
-    if (existing) {
-        console.log(`[admin] key already exists: ${key}`);
-        return send(res, 200, {
-            key: existing.key,
-            plan: existing.plan,
-            maxDevices: existing.max_devices,
-            created_at: existing.created_at,
-            alreadyExisted: true,
-        });
-    }
+    try {
+        // Idempotent — if the key is already registered, return it without error
+        const existing = await dbGet('SELECT * FROM license_keys WHERE key=?', [key]);
+        if (existing) {
+            console.log(`[admin] key already exists: ${key}`);
+            return send(res, 200, {
+                key: existing.key,
+                plan: existing.plan,
+                maxDevices: existing.max_devices,
+                created_at: existing.created_at,
+                alreadyExisted: true,
+            });
+        }
 
-    await dbRun(
-        `INSERT INTO license_keys (key, plan, max_devices, customer_name, customer_email, is_active)
-         VALUES (?,?,?,?,?,1)`,
-        [key, plan, maxDevices, customerName || null, customerEmail || null]
-    );
-    const row = await dbGet('SELECT * FROM license_keys WHERE key=?', [key]);
-    console.log(`[admin] generated key=${key} plan=${plan} customer=${customerEmail || 'N/A'}`);
-    send(res, 200, { key: row.key, plan: row.plan, maxDevices: row.max_devices, created_at: row.created_at });
+        await dbRun(
+            `INSERT INTO license_keys (key, plan, max_devices, customer_name, customer_email, is_active)
+             VALUES (?,?,?,?,?,1)`,
+            [key, plan, maxDevices, customerName || null, customerEmail || null]
+        );
+        const row = await dbGet('SELECT * FROM license_keys WHERE key=?', [key]);
+        console.log(`[admin] ✅ generated key=${key} plan=${plan} customer=${customerEmail || 'N/A'}`);
+        send(res, 200, { key: row.key, plan: row.plan, maxDevices: row.max_devices, created_at: row.created_at });
+    } catch (err) {
+        console.error('[admin] ❌ error:', err.message);
+        send(res, 500, { error: `Database error: ${err.message}` });
+    }
 }
 
 // ─── Router ──────────────────────────────────────────────────────────────────────────

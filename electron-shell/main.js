@@ -77,8 +77,8 @@ try {
     console.error('[main] proto-license-server failed to start:', e.message);
 }
 
-// License server URL — read from .env, defaults to local dev
-const LICENSE_SERVER_URL = process.env.LICENSE_SERVER_URL || 'http://localhost:4000';
+// License server URL — defaults to the Biznex Portal (key creation & activation)
+const LICENSE_SERVER_URL = process.env.LICENSE_SERVER_URL || 'http://localhost:5000';
 
 // ─── First-run check ─────────────────────────────────────────────────────────
 function isSetupComplete() {
