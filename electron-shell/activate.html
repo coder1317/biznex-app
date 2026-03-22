@@ -242,6 +242,19 @@
 
   <p class="section-label">Enter Your License Key</p>
 
+  <!-- Get Started Guidance -->
+  <div id="getStartedGuide" style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 10px; padding: 14px; margin-bottom: 16px; display: none;">
+    <p style="font-size: 12px; color: #cbd5e1; line-height: 1.6; margin-bottom: 10px;">
+      📋 <strong>First Time?</strong> Create an account on the BIZNEX Portal to generate your license key:
+    </p>
+    <button type="button" id="openPortalBtn" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 8px;">
+      🌐 Open BIZNEX Portal
+    </button>
+    <p style="font-size: 11px; color: #64748b; text-align: center;">
+      The portal will show your license key after signup. Copy it and paste it here.
+    </p>
+  </div>
+
   <form id="activationForm" autocomplete="off">
     <div class="form-group">
       <label for="licenseKey">License Key</label>
@@ -562,6 +575,24 @@
     e.preventDefault();
     handleUpgrade();
   });
+
+  // Show "Get Started" guide and Portal button handler
+  const getStartedGuide = document.getElementById('getStartedGuide');
+  const openPortalBtn = document.getElementById('openPortalBtn');
+  
+  // Show guide on load if no license is activated yet
+  if (getStartedGuide && openPortalBtn) {
+    getStartedGuide.style.display = 'block';
+    openPortalBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const portalUrl = 'http://localhost:5001'; // Portal running on port 5001
+      if (ipc && ipc.openExternal) {
+        ipc.openExternal(portalUrl);
+      } else {
+        window.open(portalUrl, '_blank');
+      }
+    });
+  }
 </script>
 </body>
 </html>

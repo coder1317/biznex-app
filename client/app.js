@@ -486,7 +486,22 @@ function fetchWithAuth(url, options = {}) {
 }
 
 // Initialize auth check on load
-document.addEventListener('DOMContentLoaded', () => { checkAuth(); initSocket(); });
+document.addEventListener('DOMContentLoaded', () => { 
+  checkAuth(); 
+  initSocket();
+  
+  // Initialize cloud sync
+  const licenseKey = localStorage.getItem('licenseKey');
+  if (licenseKey && window.initCloudSync) {
+    window.initCloudSync({
+      licenseKey: licenseKey,
+      portalUrl: 'http://localhost:5001',
+      autoSync: true,
+      syncInterval: 30 * 60 * 1000 // 30 minutes
+    });
+    console.log('☁️  Cloud Sync initialized');
+  }
+});
 
 // Login form handler
 document.getElementById('loginForm').addEventListener('submit', (e) => {
@@ -1493,6 +1508,19 @@ async function placeOrder() {
 
         console.log("✅ Order placed:", data);
         showToast(`Order #${data.order_id} completed successfully!`, "success");
+
+        // Queue order for cloud sync if available
+        const cloudSync = window.getCloudSync?.();
+        if (cloudSync && data.order_id) {
+          cloudSync.addSale({
+            id: data.order_id,
+            total: payload.total,
+            paymentMode: payload.payment_mode,
+            items: payload.items,
+            createdAt: new Date().toISOString()
+          });
+          console.log('📦 Order queued for cloud sync');
+        }
 
         if (window.clearCart) window.clearCart();
         await loadProducts();
@@ -3226,7 +3254,23 @@ function closeSettingsModal() {
 }
 
 function updateSettingsUI() {
-    // Update sync status
+    // Update cloud sync status
+    const cloudSync = window.getCloudSync?.();
+    const syncStatusInfo = document.getElementById('syncStatusInfo');
+    if (syncStatusInfo && cloudSync) {
+        const pending = cloudSync.getPendingCount();
+        const lastSync = cloudSync.getLastSyncTime();
+        syncStatusInfo.innerHTML = `
+            <div style="margin-bottom:8px;">
+                📦 <strong>Pending:</strong> ${pending} order${pending !== 1 ? 's' : ''}
+            </div>
+            <div>
+                ✅ <strong>Last Sync:</strong> ${lastSync ? new Date(lastSync).toLocaleString() : 'Never'}
+            </div>
+        `;
+    }
+
+    // Update sync status (legacy)
     if (window.SYNC && typeof window.SYNC.getStatus === 'function') {
         const status = window.SYNC.getStatus();
         const statusEl = document.getElementById('syncStatus');
@@ -3317,7 +3361,17 @@ function setSyncFrequency(frequency) {
 }
 
 function syncNow() {
-    if (window.SYNC && typeof window.SYNC.backupNow === 'function') {
+    const cloudSync = window.getCloudSync?.();
+    if (cloudSync) {
+        showToast('🔄 Starting cloud sync...', 'info');
+        cloudSync.manualSync().then(() => {
+            showToast('✅ Cloud sync completed', 'success');
+            updateSettingsUI();
+        }).catch(err => {
+            showToast('❌ Cloud sync failed: ' + (err ? err.message : 'unknown error'), 'error');
+        });
+    } else if (window.SYNC && typeof window.SYNC.backupNow === 'function') {
+        // Fallback to original backup sync
         showToast('Starting cloud sync...', 'info');
         window.SYNC.backupNow().then(() => {
             showToast('Cloud sync completed', 'success');
