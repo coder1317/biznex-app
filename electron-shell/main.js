@@ -131,6 +131,45 @@ function waitForServer(port, retries = 30, delayMs = 1000) {
     });
 }
 
+// ─── Get local IP address for LAN server access ────────────────────────────────
+function getLocalIP() {
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            // Skip internal and non-IPv4 addresses
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return 'localhost';
+}
+
+// ─── Server mode configuration file ──────────────────────────────────────────
+function getServerModeConfig() {
+    const configPath = path.join(userDataPath, '.server-mode');
+    try {
+        if (fs.existsSync(configPath)) {
+            const data = fs.readFileSync(configPath, 'utf8').trim();
+            return data === 'true';
+        }
+    } catch (e) {
+        console.warn('Could not read server mode config:', e.message);
+    }
+    return false;
+}
+
+function setServerModeConfig(enabled) {
+    const configPath = path.join(userDataPath, '.server-mode');
+    try {
+        fs.writeFileSync(configPath, enabled ? 'true' : 'false', 'utf8');
+        console.log('[main] Server mode config saved:', enabled);
+    } catch (e) {
+        console.warn('Could not write server mode config:', e.message);
+    }
+}
+
 // ─── Setup wizard window ──────────────────────────────────────────────────────
 let setupWin = null;
 
@@ -314,6 +353,11 @@ ipcMain.on('setup:done', () => {
     mainWin = createWindow();
 });
 
+// Open the portal for license generation
+ipcMain.on('setup:open-portal', () => {
+    shell.openExternal(LICENSE_SERVER_URL);
+});
+
 // ─── Backup sync IPC (always registered — backup-sync only attaches if licensed) ─
 // These are registered here so the renderer never gets a hanging invoke when
 // initBackupSync was skipped (no license / dev mode).
@@ -350,8 +394,44 @@ ipcMain.handle('app:set-startup', (_event, enable) => {
     return true;
 });
 
+// ─── Server mode (Pi/Kiosk deployment) ──────────────────────────────────────────
+ipcMain.handle('app:set-server-mode', async (_event, enabled) => {
+    console.log('[main] Server mode requested:', enabled);
+    
+    setServerModeConfig(enabled);
+    
+    if (enabled) {
+        // Delay restart slightly to allow the preference to be saved
+        setTimeout(() => {
+            console.log('[main] Restarting app in server mode...');
+            app.relaunch();
+            app.exit(0);
+        }, 500);
+    }
+    
+    return { success: true, message: 'Server mode will be applied on restart' };
+});
+
+ipcMain.handle('app:get-local-ip', () => {
+    return getLocalIP();
+});
+
 // ─── Startup license gate ─────────────────────────────────────────────────────
 app.whenReady().then(async () => {
+    // ─── Check if running in server mode (headless for Pi/Kiosk) ─────────────────
+    // In server mode, skip UI entirely and just run the embedded server.
+    if (getServerModeConfig()) {
+        console.log('[main] ===== SERVER MODE ENABLED (HEADLESS) =====');
+        // Simply wait for the server to start and then go idle.
+        // The server process (server.js) is started by the electron-shell entry point.
+        await waitForServer(parseInt(process.env.PORT || '3000', 10), 60, 500);
+        console.log(`[main] Biznex server running on port ${process.env.PORT || 3000}`);
+        console.log('[main] Server is reachable from LAN at: http://' + getLocalIP() + ':' + (process.env.PORT || 3000));
+        console.log('[main] No UI window will be displayed. Connect from a web browser on the LAN.');
+        // Keep the app running; don't create any windows.
+        return;
+    }
+
     // Dev mode: bypass the license gate UNLESS SKIP_LICENSE_CHECK=false is set.
     // On every real (packaged) install the gate always runs, ensuring the activation
     // screen appears before anything else on a fresh device.

@@ -496,6 +496,47 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
     login(username, password);
 });
 
+// Settings modal event listeners (set up after DOM loads)
+document.addEventListener('DOMContentLoaded', () => {
+    // Close button
+    const closeBtn = document.getElementById('closeSettingsModal');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeSettingsModal);
+    }
+    
+    // Modal overlay click to close
+    const settingsModal = document.getElementById('settingsModal');
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) closeSettingsModal();
+        });
+    }
+    
+    // Sync toggle
+    const syncToggle = document.getElementById('syncToggle');
+    if (syncToggle) {
+        syncToggle.addEventListener('change', (e) => toggleSync(e.target.checked));
+    }
+    
+    // Sync frequency dropdown
+    const syncFreq = document.getElementById('syncFrequency');
+    if (syncFreq) {
+        syncFreq.addEventListener('change', (e) => setSyncFrequency(e.target.value));
+    }
+    
+    // Manual sync button
+    const syncBtn = document.getElementById('syncNowBtn');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', syncNow);
+    }
+    
+    // Server mode toggle
+    const serverToggle = document.getElementById('serverModeToggle');
+    if (serverToggle) {
+        serverToggle.addEventListener('change', (e) => toggleServerMode(e.target.checked));
+    }
+});
+
 /* ======================
    TOAST NOTIFICATIONS
 ====================== */
@@ -3163,4 +3204,161 @@ async function openOrderDetails(orderId) {
 
 function closeOrderModal() {
     document.getElementById('orderModal').classList.add('hidden');
+}
+
+/* ======================
+   SETTINGS MODAL
+====================== */
+function openSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        // Populate current values
+        updateSettingsUI();
+    }
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function updateSettingsUI() {
+    // Update sync status
+    if (window.SYNC && typeof window.SYNC.getStatus === 'function') {
+        const status = window.SYNC.getStatus();
+        const statusEl = document.getElementById('syncStatus');
+        const statusText = document.getElementById('syncStatusText');
+        if (statusEl && statusText) {
+            statusEl.className = 'status-indicator ' + (status && status.synced ? 'synced' : 'pending');
+            statusText.textContent = status && status.synced ? 
+                `Last synced: ${new Date(status.lastSync).toLocaleString()}` :
+                'Never synced';
+        }
+    }
+
+    // Update sync frequency dropdown
+    const freq = localStorage.getItem('syncFrequency') || 'manual';
+    const freqSelect = document.getElementById('syncFrequency');
+    if (freqSelect) {
+        freqSelect.value = freq;
+    }
+
+    // Update sync toggle
+    const syncEnabled = localStorage.getItem('syncEnabled') !== 'false';
+    const syncToggle = document.getElementById('syncToggle');
+    if (syncToggle) {
+        syncToggle.checked = syncEnabled;
+    }
+
+    // Update license info
+    if (licenseInfo) {
+        const licenseEl = document.getElementById('licenseInfoContent');
+        if (licenseEl) {
+            licenseEl.innerHTML = `
+                <div style="font-size:12px;line-height:1.6;color:#94a3b8;">
+                    <div style="margin-bottom:8px;">
+                        <strong>${licenseInfo.plan ? licenseInfo.plan.toUpperCase() : 'TRIAL'}</strong> Plan
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        License Key: <br/>
+                        <code style="background:#0f172a;padding:4px 8px;border-radius:4px;font-size:11px;color:#64b5f6;word-break:break-all;">${licenseInfo.licenseKey || 'N/A'}</code>
+                    </div>
+                    <div>Activated: ${licenseInfo.activatedAt ? new Date(licenseInfo.activatedAt).toLocaleDateString() : 'N/A'}</div>
+                </div>
+            `;
+        }
+    }
+
+    // Update server mode info (show local IP if server mode is enabled)
+    const serverToggle = document.getElementById('serverModeToggle');
+    const serverModeInfo = document.getElementById('serverModeInfo');
+    if (serverToggle && serverModeInfo && window.APP_SERVER) {
+        if (serverToggle.checked) {
+            serverModeInfo.style.display = 'block';
+            // Fetch and display local IP
+            window.APP_SERVER.getLocalIP().then(ip => {
+                const port = 3000; // Default port
+                const serverUrl = `http://${ip}:${port}`;
+                const serverUrlEl = document.getElementById('serverUrl');
+                if (serverUrlEl) {
+                    serverUrlEl.textContent = serverUrl;
+                }
+            }).catch(err => {
+                console.error('Failed to get local IP:', err);
+            });
+        } else {
+            serverModeInfo.style.display = 'none';
+        }
+    }
+}
+
+function toggleSync(enabled) {
+    localStorage.setItem('syncEnabled', enabled);
+    if (enabled && window.SYNC && typeof window.SYNC.start === 'function') {
+        window.SYNC.start();
+        showToast('Cloud sync enabled', 'success');
+    } else if (!enabled && window.SYNC && typeof window.SYNC.stop === 'function') {
+        window.SYNC.stop();
+        showToast('Cloud sync disabled', 'success');
+    }
+}
+
+function setSyncFrequency(frequency) {
+    localStorage.setItem('syncFrequency', frequency);
+    showToast(`Sync frequency set to: ${frequency}`, 'success');
+    
+    // Apply frequency to running sync if active
+    if (window.SYNC && typeof window.SYNC.setFrequency === 'function') {
+        window.SYNC.setFrequency(frequency);
+    }
+}
+
+function syncNow() {
+    if (window.SYNC && typeof window.SYNC.backupNow === 'function') {
+        showToast('Starting cloud sync...', 'info');
+        window.SYNC.backupNow().then(() => {
+            showToast('Cloud sync completed', 'success');
+            updateSettingsUI();
+        }).catch(err => {
+            showToast('Cloud sync failed: ' + (err ? err.message : 'unknown error'), 'error');
+        });
+    } else {
+        showToast('Cloud sync not available', 'warning');
+    }
+}
+
+function toggleServerMode(enabled) {
+    if (enabled) {
+        showToast('Server mode requires app restart. Saving preference...', 'info');
+        localStorage.setItem('serverMode', 'true');
+        if (window.APP_SERVER && typeof window.APP_SERVER.setServerMode === 'function') {
+            window.APP_SERVER.setServerMode(true);
+        }
+        // Close modal after a brief delay
+        setTimeout(() => {
+            closeSettingsModal();
+            showToast('App will restart as a server. Check LAN settings to connect from other devices.', 'success', 5000);
+        }, 500);
+    } else {
+        localStorage.setItem('serverMode', 'false');
+        if (window.APP_SERVER && typeof window.APP_SERVER.setServerMode === 'function') {
+            window.APP_SERVER.setServerMode(false);
+        }
+        showToast('Server mode disabled', 'success');
+    }
+}
+
+function enableServerMode() {
+    if (!confirm('Enable server mode? This will restart the application and allow other devices to connect via LAN. Continue?')) {
+        return;
+    }
+    
+    const checkbox = document.getElementById('serverModeToggle');
+    if (checkbox) {
+        checkbox.checked = true;
+        toggleServerMode(true);
+    }
 }

@@ -9,4 +9,6 @@ contextBridge.exposeInMainWorld('setupAPI', {
     saveSetup: (data) => ipcRenderer.invoke('setup:save', data),
     /** Close wizard and launch the main app window */
     setupDone: () => ipcRenderer.send('setup:done'),
+    /** Open the portal in system browser */
+    openPortal: () => ipcRenderer.send('setup:open-portal'),
 });
