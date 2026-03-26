@@ -9,7 +9,7 @@ class CloudSyncClient {
     this.licenseKey = config.licenseKey || localStorage.getItem('licenseKey');
     this.storeId = config.storeId || localStorage.getItem('storeId');
     this.storeName = config.storeName || localStorage.getItem('storeName') || 'Local Store';
-    this.portalUrl = config.portalUrl || 'http://localhost:5001';
+    this.portalUrl = config.portalUrl || 'http://localhost:5000';
     this.syncInterval = config.syncInterval || 30 * 60 * 1000; // 30 minutes
     this.isAutoSyncEnabled = config.autoSync !== false;
     this.pendingSales = [];

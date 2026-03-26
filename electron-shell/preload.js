@@ -76,9 +76,3 @@ contextBridge.exposeInMainWorld('APP_SETTINGS', {
     getStartup: ()      => ipcRenderer.invoke('app:get-startup'),
     setStartup: (enable) => ipcRenderer.invoke('app:set-startup', enable),
 });
-
-// Server mode and LAN settings
-contextBridge.exposeInMainWorld('APP_SERVER', {
-    setServerMode: (enabled) => ipcRenderer.invoke('app:set-server-mode', enabled),
-    getLocalIP: () => ipcRenderer.invoke('app:get-local-ip'),
-});

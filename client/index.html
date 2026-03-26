@@ -72,71 +72,12 @@
       </div>
     </div>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal hidden">
-      <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
-        <h2 style="margin-right: 40px;">⚙️ Settings</h2>
-        <button onclick="closeSettingsModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; cursor: pointer; font-size: 24px;">✕</button>
-        
-        <!-- Cloud Sync Settings -->
-        <div style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid # 334155;">
-          <h3 style="margin-top: 0; margin-bottom: 12px;">☁️ Cloud Sync</h3>
-          <div id="syncStatusInfo" style="background: rgba(79,70,229,0.1); border: 1px solid rgba(79,70,229,0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 13px;">
-            <!-- Updated dynamically -->
-          </div>
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <label for="syncToggle" style="cursor: pointer;">Enable Cloud Sync</label>
-            <input type="checkbox" id="syncToggle" style="width: 24px; height: 24px; cursor: pointer;" />
-          </div>
-          <div style="margin-bottom: 12px;">
-            <label for="syncFrequency" style="display: block; margin-bottom: 6px; font-size: 13px;">Sync Frequency</label>
-            <select id="syncFrequency" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0;">
-              <option value="manual">Manual</option>
-              <option value="5min" selected>Every 5 minutes</option>
-              <option value="15min">Every 15 minutes</option>
-              <option value="hourly">Hourly</option>
-              <option value="daily">Daily</option>
-            </select>
-          </div>
-          <button onclick="syncNow()" style="width: 100%; padding: 10px; background: #0284c7; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔄 Sync Now</button>
-        </div>
-
-        <!-- Server Mode Settings -->
-        <div style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #334155;">
-          <h3 style="margin-top: 0; margin-bottom: 12px;">🖥️ Server Mode (Pi/Mini PC)</h3>
-          <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Convert this device to run as a local server without UI. Useful for Raspberry Pi or headless mini PC deployments.</p>
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <label for="serverModeToggle" style="cursor: pointer;">Enable Server Mode</label>
-            <input type="checkbox" id="serverModeToggle" style="width: 24px; height: 24px; cursor: pointer;" />
-          </div>
-          <div id="serverModeInfo" style="background: rgba(14,165,233,0.1); border: 1px solid rgba(14,165,233,0.3); border-radius: 8px; padding: 12px; font-size: 12px; display: none;">
-            <strong>Server URL:</strong> <code id="serverUrl" style="background: #1e293b; padding: 4px 8px; border-radius: 4px;">http://192.168.1.100:3000</code>
-            <br/><br/>
-            <strong>Note:</strong> After enabling, the app will restart in kiosk mode. Devices on your LAN can access the UI from the server URL above.
-          </div>
-          <button id="enableServerModeBtn" onclick="enableServerMode()" style="width: 100%; padding: 10px; background: #059669; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: none;">Enable & Restart</button>
-        </div>
-
-        <!-- License Info -->
-        <div style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #334155;">
-          <h3 style="margin-top: 0; margin-bottom: 12px;">🔑 License</h3>
-          <div id="licenseInfo" style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; font-size: 12px;">
-            <!-- Updated dynamically -->
-          </div>
-        </div>
-
-        <!-- Close Button -->
-        <button onclick="closeSettingsModal()" class="btn secondary" style="width: 100%;">Close</button>
-      </div>
-    </div>
-
     <script src="socket.io.min.js"></script>
     <script src="chart.min.js"></script>
     <script src="cart.js"></script>
     <script src="prompt-modal.js"></script>
     <script src="update-banner.js"></script>
     <script src="sync-indicator.js"></script>
-    <script src="cloud-sync.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
